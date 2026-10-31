@@ -3,6 +3,7 @@ import { useRef } from 'react';
 
 interface Props {
   currentSrc: string | null;
+  displayUrl: string;
   loading: boolean;
   iframeRef: React.RefObject<HTMLIFrameElement>;
   onQuickSearch: (query: string) => void;
@@ -17,7 +18,7 @@ const SHORTCUTS = [
   { label: 'Tor Project', url: 'torproject.org', icon: '🧅' },
 ];
 
-export function WebView({ currentSrc, loading, iframeRef, onQuickSearch }: Props) {
+export function WebView({ currentSrc, displayUrl, loading, iframeRef, onQuickSearch }: Props) {
   const searchRef = useRef<HTMLInputElement>(null);
 
   if (!currentSrc) {
@@ -106,7 +107,7 @@ export function WebView({ currentSrc, loading, iframeRef, onQuickSearch }: Props
       <div className="absolute bottom-3 left-3 right-3 pointer-events-none">
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/80 backdrop-blur text-xs text-gray-300 border border-white/10">
           <Globe className="w-3 h-3 text-emerald-400" />
-          <span className="truncate max-w-[200px]">{currentSrc.replace(/^https?:\/\//, '').slice(0, 40)}</span>
+          <span className="truncate max-w-[200px]">{displayUrl.replace(/^https?:\/\//, '').slice(0, 40)}</span>
           <span className="text-gray-500">·</span>
           <Shield className="w-3 h-3 text-emerald-400" />
           <span className="text-emerald-400">Protetto</span>

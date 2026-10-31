@@ -44,6 +44,7 @@ function App() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <WebView
           currentSrc={browser.currentSrc}
+          displayUrl={browser.url}
           loading={browser.loading}
           iframeRef={browser.iframeRef}
           onQuickSearch={(q) => browser.navigate(q)}
@@ -53,7 +54,7 @@ function App() {
           <DevToolsPanel
             logs={browser.devtools.logs}
             activeTab={browser.devtools.activeTab}
-            currentSrc={browser.currentSrc}
+            currentSrc={browser.url}
             onTabChange={browser.devtools.setActiveTab}
             onClearLogs={browser.devtools.clearLogs}
             onClose={() => browser.togglePanel('devtools')}

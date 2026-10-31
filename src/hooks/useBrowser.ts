@@ -24,11 +24,12 @@ export function useBrowser() {
 
   const navigate = useCallback((input: string) => {
     if (!input.trim()) return;
-    import('../lib/privacy').then(({ toUrl }) => {
+    import('../lib/privacy').then(({ toUrl, buildProxyUrl }) => {
       const finalUrl = toUrl(input);
+      const proxiedUrl = buildProxyUrl(finalUrl);
       setUrl(finalUrl);
       setDisplayUrl(input);
-      setCurrentSrc(finalUrl);
+      setCurrentSrc(proxiedUrl);
       setLoading(true);
       setBlocked(false);
       setHistory((prev) => {
@@ -37,47 +38,63 @@ export function useBrowser() {
         return newHistory;
       });
       privacy.trackPageLoad(finalUrl);
-      // Simulate loading completion
-      setTimeout(() => setLoading(false), 1200);
+      setTimeout(() => setLoading(false), 1500);
     });
   }, [historyIndex, privacy]);
+
+  const loadUrl = useCallback((targetUrl: string) => {
+    import('../lib/privacy').then(({ buildProxyUrl }) => {
+      const proxied = buildProxyUrl(targetUrl);
+      setUrl(targetUrl);
+      setDisplayUrl(targetUrl);
+      setCurrentSrc(proxied);
+      setLoading(true);
+      setTimeout(() => setLoading(false), 1500);
+    });
+  }, []);
 
   const goBack = useCallback(() => {
     if (historyIndex > 0) {
       const newIndex = historyIndex - 1;
       setHistoryIndex(newIndex);
       const target = history[newIndex];
-      setCurrentSrc(target);
-      setUrl(target);
-      setDisplayUrl(target);
-      setLoading(true);
-      setTimeout(() => setLoading(false), 1000);
+      if (target === 'about:home') {
+        setCurrentSrc(null);
+        setUrl('');
+        setDisplayUrl('');
+      } else {
+        loadUrl(target);
+      }
     }
-  }, [historyIndex, history]);
+  }, [historyIndex, history, loadUrl]);
 
   const goForward = useCallback(() => {
     if (historyIndex < history.length - 1) {
       const newIndex = historyIndex + 1;
       setHistoryIndex(newIndex);
       const target = history[newIndex];
-      setCurrentSrc(target);
-      setUrl(target);
-      setDisplayUrl(target);
-      setLoading(true);
-      setTimeout(() => setLoading(false), 1000);
+      if (target === 'about:home') {
+        setCurrentSrc(null);
+        setUrl('');
+        setDisplayUrl('');
+      } else {
+        loadUrl(target);
+      }
     }
-  }, [historyIndex, history]);
+  }, [historyIndex, history, loadUrl]);
 
   const reload = useCallback(() => {
-    if (currentSrc) {
+    if (url) {
       setCurrentSrc(null);
       setLoading(true);
-      setTimeout(() => {
-        setCurrentSrc(url);
-        setLoading(false);
-      }, 600);
+      import('../lib/privacy').then(({ buildProxyUrl }) => {
+        setTimeout(() => {
+          setCurrentSrc(buildProxyUrl(url));
+          setLoading(false);
+        }, 400);
+      });
     }
-  }, [currentSrc, url]);
+  }, [url]);
 
   const goHome = useCallback(() => {
     setCurrentSrc(null);
