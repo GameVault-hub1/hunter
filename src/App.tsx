@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useBrowser } from './hooks/useBrowser';
 import { BrowserChrome } from './components/BrowserChrome';
 import { WebView } from './components/WebView';
@@ -8,13 +7,6 @@ import { PrivacyShield } from './components/PrivacyShield';
 
 function App() {
   const browser = useBrowser();
-
-  // Simulate console logs on navigation
-  useEffect(() => {
-    if (browser.currentSrc) {
-      browser.devtools.simulatePageLogs(browser.currentSrc);
-    }
-  }, [browser.currentSrc]);
 
   const canGoBack = browser.historyIndex > 0;
   const canGoForward = browser.historyIndex < browser.history.length - 1;
@@ -43,18 +35,17 @@ function App() {
 
       <div className="flex-1 flex flex-col overflow-hidden">
         <WebView
-          currentSrc={browser.currentSrc}
-          displayUrl={browser.url}
+          visited={browser.visited}
           loading={browser.loading}
-          iframeRef={browser.iframeRef}
           onQuickSearch={(q) => browser.navigate(q)}
+          onReopen={(url) => browser.navigate(url)}
         />
 
         {browser.activePanel === 'devtools' && (
           <DevToolsPanel
             logs={browser.devtools.logs}
             activeTab={browser.devtools.activeTab}
-            currentSrc={browser.url}
+            currentSrc={browser.visited?.url ?? null}
             onTabChange={browser.devtools.setActiveTab}
             onClearLogs={browser.devtools.clearLogs}
             onClose={() => browser.togglePanel('devtools')}

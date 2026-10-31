@@ -1,22 +1,26 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { usePrivacy } from './usePrivacy';
 import { useDevTools } from './useDevTools';
 import { useExtensions } from './useExtensions';
+import { toUrl } from '../lib/privacy';
 
 export type PanelType = 'devtools' | 'extensions' | null;
 
+export interface VisitedSite {
+  url: string;
+  displayUrl: string;
+  openedAt: number;
+}
+
 export function useBrowser() {
-  const [url, setUrl] = useState('');
   const [displayUrl, setDisplayUrl] = useState('');
-  const [currentSrc, setCurrentSrc] = useState<string | null>(null);
+  const [visited, setVisited] = useState<VisitedSite | null>(null);
   const [history, setHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [loading, setLoading] = useState(false);
-  const [blocked, setBlocked] = useState(false);
   const [activePanel, setActivePanel] = useState<PanelType>(null);
   const [showShield, setShowShield] = useState(false);
   const [incognito, setIncognito] = useState(false);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const privacy = usePrivacy();
   const devtools = useDevTools();
@@ -24,77 +28,59 @@ export function useBrowser() {
 
   const navigate = useCallback((input: string) => {
     if (!input.trim()) return;
-    import('../lib/privacy').then(({ toUrl }) => {
-      const finalUrl = toUrl(input);
-      setUrl(finalUrl);
-      setDisplayUrl(input);
-      setCurrentSrc(finalUrl);
-      setLoading(true);
-      setBlocked(false);
-      setHistory((prev) => {
-        const newHistory = [...prev.slice(0, historyIndex + 1), finalUrl];
-        setHistoryIndex(newHistory.length - 1);
-        return newHistory;
-      });
-      privacy.trackPageLoad(finalUrl);
-      setTimeout(() => setLoading(false), 1500);
-    });
-  }, [historyIndex, privacy]);
-
-  const loadUrl = useCallback((targetUrl: string) => {
-    setUrl(targetUrl);
-    setDisplayUrl(targetUrl);
-    setCurrentSrc(targetUrl);
+    const finalUrl = toUrl(input);
+    setDisplayUrl(input);
     setLoading(true);
-    setTimeout(() => setLoading(false), 1500);
-  }, []);
+
+    // Open in a new tab with anonymous referrer (noopener + noreferrer)
+    window.open(finalUrl, '_blank', 'noopener,noreferrer');
+
+    setVisited({ url: finalUrl, displayUrl: input.trim(), openedAt: Date.now() });
+    setHistory((prev) => {
+      const newHistory = [...prev.slice(0, historyIndex + 1), finalUrl];
+      setHistoryIndex(newHistory.length - 1);
+      return newHistory;
+    });
+    privacy.trackPageLoad(finalUrl);
+    devtools.simulatePageLogs(finalUrl);
+    setTimeout(() => setLoading(false), 800);
+  }, [historyIndex, privacy, devtools]);
 
   const goBack = useCallback(() => {
     if (historyIndex > 0) {
       const newIndex = historyIndex - 1;
       setHistoryIndex(newIndex);
       const target = history[newIndex];
-      if (target === 'about:home') {
-        setCurrentSrc(null);
-        setUrl('');
-        setDisplayUrl('');
-      } else {
-        loadUrl(target);
-      }
+      window.open(target, '_blank', 'noopener,noreferrer');
+      setVisited({ url: target, displayUrl: target, openedAt: Date.now() });
+      privacy.trackPageLoad(target);
+      devtools.simulatePageLogs(target);
     }
-  }, [historyIndex, history, loadUrl]);
+  }, [historyIndex, history, privacy, devtools]);
 
   const goForward = useCallback(() => {
     if (historyIndex < history.length - 1) {
       const newIndex = historyIndex + 1;
       setHistoryIndex(newIndex);
       const target = history[newIndex];
-      if (target === 'about:home') {
-        setCurrentSrc(null);
-        setUrl('');
-        setDisplayUrl('');
-      } else {
-        loadUrl(target);
-      }
+      window.open(target, '_blank', 'noopener,noreferrer');
+      setVisited({ url: target, displayUrl: target, openedAt: Date.now() });
+      privacy.trackPageLoad(target);
+      devtools.simulatePageLogs(target);
     }
-  }, [historyIndex, history, loadUrl]);
+  }, [historyIndex, history, privacy, devtools]);
 
   const reload = useCallback(() => {
-    if (url) {
-      setCurrentSrc(null);
+    if (visited) {
       setLoading(true);
-      setTimeout(() => {
-        setCurrentSrc(url);
-        setLoading(false);
-      }, 400);
+      window.open(visited.url, '_blank', 'noopener,noreferrer');
+      setTimeout(() => setLoading(false), 600);
     }
-  }, [url]);
+  }, [visited]);
 
   const goHome = useCallback(() => {
-    setCurrentSrc(null);
-    setUrl('');
+    setVisited(null);
     setDisplayUrl('');
-    setBlocked(false);
     setHistory((prev) => {
       const newHistory = [...prev.slice(0, historyIndex + 1), 'about:home'];
       setHistoryIndex(newHistory.length - 1);
@@ -106,7 +92,6 @@ export function useBrowser() {
     setActivePanel((current) => (current === panel ? null : panel));
   }, []);
 
-  // keyboard shortcut: Escape closes panel
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setActivePanel(null);
@@ -116,18 +101,15 @@ export function useBrowser() {
   }, []);
 
   return {
-    url,
     displayUrl,
     setDisplayUrl,
-    currentSrc,
+    visited,
     loading,
-    blocked,
     history,
     historyIndex,
     activePanel,
     showShield,
     incognito,
-    iframeRef,
     privacy,
     devtools,
     extensions,
@@ -139,6 +121,5 @@ export function useBrowser() {
     togglePanel,
     setShowShield,
     setIncognito,
-    setBlocked,
   };
 }
