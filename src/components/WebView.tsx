@@ -97,10 +97,11 @@ export function WebView({ currentSrc, displayUrl, loading, iframeRef, onQuickSea
       <iframe
         ref={iframeRef}
         src={currentSrc}
+        is="x-frame-bypass"
         title="Contenuto navigato"
         className="w-full h-full border-0"
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
         referrerPolicy="no-referrer"
+        allow="fullscreen"
         onLoad={() => {}}
       />
       {/* X-Frame fallback notice */}

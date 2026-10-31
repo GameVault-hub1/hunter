@@ -96,12 +96,6 @@ export function toUrl(input: string): string {
   return `https://duckduckgo.com/?q=${encodeURIComponent(trimmed)}&kp=1&kl=it-it`;
 }
 
-const PROXY_ENDPOINT = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/web-proxy`;
-
-export function buildProxyUrl(targetUrl: string): string {
-  return `${PROXY_ENDPOINT}?url=${encodeURIComponent(targetUrl)}`;
-}
-
 export function normalizeDisplay(url: string): string {
   if (url.startsWith('https://duckduckgo.com/?q=')) {
     try {

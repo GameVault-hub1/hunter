@@ -24,12 +24,11 @@ export function useBrowser() {
 
   const navigate = useCallback((input: string) => {
     if (!input.trim()) return;
-    import('../lib/privacy').then(({ toUrl, buildProxyUrl }) => {
+    import('../lib/privacy').then(({ toUrl }) => {
       const finalUrl = toUrl(input);
-      const proxiedUrl = buildProxyUrl(finalUrl);
       setUrl(finalUrl);
       setDisplayUrl(input);
-      setCurrentSrc(proxiedUrl);
+      setCurrentSrc(finalUrl);
       setLoading(true);
       setBlocked(false);
       setHistory((prev) => {
@@ -43,14 +42,11 @@ export function useBrowser() {
   }, [historyIndex, privacy]);
 
   const loadUrl = useCallback((targetUrl: string) => {
-    import('../lib/privacy').then(({ buildProxyUrl }) => {
-      const proxied = buildProxyUrl(targetUrl);
-      setUrl(targetUrl);
-      setDisplayUrl(targetUrl);
-      setCurrentSrc(proxied);
-      setLoading(true);
-      setTimeout(() => setLoading(false), 1500);
-    });
+    setUrl(targetUrl);
+    setDisplayUrl(targetUrl);
+    setCurrentSrc(targetUrl);
+    setLoading(true);
+    setTimeout(() => setLoading(false), 1500);
   }, []);
 
   const goBack = useCallback(() => {
@@ -87,12 +83,10 @@ export function useBrowser() {
     if (url) {
       setCurrentSrc(null);
       setLoading(true);
-      import('../lib/privacy').then(({ buildProxyUrl }) => {
-        setTimeout(() => {
-          setCurrentSrc(buildProxyUrl(url));
-          setLoading(false);
-        }, 400);
-      });
+      setTimeout(() => {
+        setCurrentSrc(url);
+        setLoading(false);
+      }, 400);
     }
   }, [url]);
 
